@@ -11,15 +11,15 @@ public class MyProxy extends Thread {
     String targetPort;//服务器端口
     InputStream inputStream_client;//读取浏览器发过来的请求的流
     OutputStream outputStream_client;//将数据发送到浏览器的流
-    PrintWriter outPrintWriter_client;//来向浏览器写入数据
+    PrintWriter outPrintWriter_client;//向浏览器写入数据
     BufferedReader bufferedReader_client;//缓冲来自浏览器的请求
 
     Socket accessSocket;//与网站连接的socket
 
-    InputStream inputStream_Web;//这个输入流用来读取从网站发回的响应
-    OutputStream outputStream_Web;//这个输出流用来向网站发送请求
-    PrintWriter outPrintWriter_Web;//这个writer用来向网站发送请求
-    BufferedReader bufferedReader_web;//这个缓冲用来缓存想网站发送的请求
+    InputStream inputStream_Web;//读取从网站发回的响应
+    OutputStream outputStream_Web;//向网站发送请求
+    PrintWriter outPrintWriter_Web;//向网站发送请求
+    BufferedReader bufferedReader_web;//缓存网站发送的请求
 
     //String cacheFilePath;
 
@@ -42,14 +42,14 @@ public class MyProxy extends Thread {
 
         /** 读取缓存 */
         file = new File(HttpProxy.cachePath);
-        if (!file.exists()) {//文件不存在则新建一个文件
+        if (!file.exists()) {
             file.createNewFile();
         }
         fileInputStream = new FileInputStream(HttpProxy.cachePath);
         cache = readCache(fileInputStream);
         System.out.println("从缓存文件中读取到：" + cache.size() + "行");
 
-        start();//启动本线程
+        start();
     }
 
     public void run() {
@@ -68,7 +68,7 @@ public class MyProxy extends Thread {
                 return;//此线程结束
             }
 
-            /** 将请求写入缓存文件,如果缓存中已经有相同的请求，就不再写入了 */
+            /** 将请求写入缓存文件,如果缓存中已经有相同的请求，不再写入 */
             System.out.println("===查找缓存中===");
             boolean has_in_cache_already = false;
             for (String iter : cache) {
@@ -82,11 +82,11 @@ public class MyProxy extends Thread {
             if (has_in_cache_already == false) {
                 System.out.println("缓存中没有找到该请求，将该请求写入缓存");
                 String temp = buffer + "\r\n";
-                write_cache(temp.getBytes(), 0, temp.length()); //将该请求写入缓存
+                write_cache(temp.getBytes(), 0, temp.length()); 
             }
 
             if (has_in_cache_already == true) { //缓存命中，检查缓存是否超过用户设置时间
-                //获取缓存中对应该请求的响应报文的Date：后面的字符串
+                //获取缓存中对应该请求的响应报文的Date
                 System.out.println("===检查缓存是否超过用户设置时间===");
                 String dateOfResponse = findDateOfRespons(cache, buffer);
                 System.out.println("提取字段 Date：" + dateOfResponse);
@@ -96,7 +96,7 @@ public class MyProxy extends Thread {
                     //获取当前系统时间
                     //SimpleDateFormat simpleDateFormat = new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss");
 
-                    if (hasExpired(dateOfResponse)) { //不做检查，
+                    if (hasExpired(dateOfResponse)) {
                         System.out.println("缓存已超期");
 
                     } else {
@@ -105,7 +105,7 @@ public class MyProxy extends Thread {
                         System.out.println("缓存未超期");
                         if (cacheIndex != -1)
                             for (int i = cacheIndex + 1; i < cache.size(); i++) {
-                                if (cache.get(i).contains("http://"))  // 内容已读完，到达下一个请求
+                                if (cache.get(i).contains("http://")) 
                                     break;
                                 temp_response += cache.get(i);
                                 temp_response += "\r\n";
@@ -144,13 +144,13 @@ public class MyProxy extends Thread {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                Thread.sleep(HttpProxy.CONNECT_PAUSE);//等待
+                Thread.sleep(HttpProxy.CONNECT_PAUSE);
             }
             if (accessSocket != null) {//成功建立连接
-                //debug
+                
                 System.out.println("成功与网站建立连接，准备向" + targetHost+"发送请求");
                 //accessSocket.setSoTimeout(HttpProxy.TIMEOUT);
-                inputStream_Web = accessSocket.getInputStream();//用于读取网站响应的流
+                inputStream_Web = accessSocket.getInputStream();
                 bufferedReader_web = new BufferedReader(new InputStreamReader(inputStream_Web));
                 outPrintWriter_Web = new PrintWriter(accessSocket.getOutputStream());//用于向网站发送请求
 
@@ -159,8 +159,8 @@ public class MyProxy extends Thread {
                 if (cache.size() == 0 || has_in_cache_already == false) {
                     /** 将请求直接发往网站，并获取响应，记录响应至缓存 */
                     sendRequestToInternet(buffer); //向网站发送请求
-                    transmitResponseToClient(); //获取响应，返回浏览器，并将响应存下来
-                } else {//缓存文件不为空，寻找之前有没有缓存过该请求
+                    transmitResponseToClient(); 
+                } else {//缓存文件不为空，读取缓存
 
                     String modifyTime;
                     String info = "";
@@ -305,7 +305,7 @@ public class MyProxy extends Thread {
     }
 
     /**
-     * 这个函数做三件事：从网站接收响应，发送给浏览器，并将响应写入缓存
+     * 从网站接收响应，发送给浏览器，并将响应写入缓存
      *
      * @throws IOException
      */
@@ -352,7 +352,7 @@ public class MyProxy extends Thread {
     }
 
     /**
-     * 将内容写入缓存，这两段代码参考网上的
+     * 将内容写入缓存
      *
      * @param c
      * @throws IOException
@@ -385,7 +385,7 @@ public class MyProxy extends Thread {
             if (cache_temp.get(i).equals(request)) {//缓存中有该请求
                 startSearching = i;
                 cacheIndex = i;
-                for (int j = startSearching + 1; j < cache_temp.size(); j++) {  //才该请求开始查找对应该请求的服务器响应
+                for (int j = startSearching + 1; j < cache_temp.size(); j++) { 
                     if (cache_temp.get(j).contains("http://")) //已到下一个请求，说明该请求无响应记录
                         break;
                     if (cache_temp.get(j).contains("Last-Modified:")) { //该响应包含Last-Modified
@@ -396,7 +396,7 @@ public class MyProxy extends Thread {
 
                         return LastModifiTime;//提取到Last-Modified时间
                     }
-                    if (cache_temp.get(j).contains("<html>")) {  // 说明该响应没有Last-Modified属性
+                    if (cache_temp.get(j).contains("<html>")) {  // 该响应没有Last-Modified属性
                         has_cache_no_timestamp = true;
                         return LastModifiTime;
                     }
@@ -415,10 +415,10 @@ public class MyProxy extends Thread {
         System.out.println("正在查找该请求对应的响应的Date：" + request);
         for (int i = 0; i < cache_temp.size(); i++) {
 
-            if (cache_temp.get(i).equals(request)) {//缓存中有该请求
+            if (cache_temp.get(i).equals(request)) {//缓存命中
                 startSearching = i;
                 cacheIndex = i;
-                for (int j = startSearching + 1; j < cache_temp.size(); j++) {  //才该请求开始查找对应该请求的服务器响应
+                for (int j = startSearching + 1; j < cache_temp.size(); j++) { 
                     if (cache_temp.get(j).contains("http://")) //已到下一个请求，说明该请求无响应记录
                         break;
                     if (cache_temp.get(j).contains("Date:")) { //该响应包含Date:
@@ -428,7 +428,7 @@ public class MyProxy extends Thread {
 
                         return dateOfRespons;//提取到Last-Modified时间
                     }
-                    if (cache_temp.get(j).contains("<html>")) {  // 说明该响应没有Date:属性
+                    if (cache_temp.get(j).contains("<html>")) {  // 该响应没有Date:属性
 
                         return dateOfRespons;
                     }
@@ -481,7 +481,7 @@ public class MyProxy extends Thread {
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        if (second > HttpProxy.timetocheck) { //不做检查，
+        if (second > HttpProxy.timetocheck) { 
             return true;
         } else {
             return false;
